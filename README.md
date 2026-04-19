@@ -1,1 +1,100 @@
-## vcd-python
+# vcd-python
+
+**Volatile Cyber Defense (VCD)** の Python 実装です。攻撃を検知したらプロセスが即座に証拠を保全して自壊し、クリーンな状態で回復するセキュリティミドルウェアです。
+
+論文: [DOI: 10.5281/zenodo.19648507](https://zenodo.org/records/19648507)
+
+## インストール
+
+```bash
+pip install vcd-python
+```
+
+Flask と使用する場合:
+
+```bash
+pip install vcd-python[flask]
+```
+
+## クイックスタート
+
+```python
+from flask import Flask
+from vcd import VCDMiddleware
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "Hello, World!"
+
+# デフォルト：検知・ログのみ（自壊しない）
+app.wsgi_app = VCDMiddleware(app.wsgi_app)
+```
+
+自壊を有効化する場合:
+
+```python
+app.wsgi_app = VCDMiddleware(
+    app.wsgi_app,
+    self_destruct=True,
+    forensics_path="/var/vcd/forensics.jsonl",
+    blocklist_path="/var/vcd/blocklist.txt",
+)
+```
+
+## ⚠️ 警告
+
+`self_destruct=True` を設定すると、攻撃検知時にプロセスが `os._exit(1)` で即時終了します。
+**supervisord・systemd・Kubernetes 等の自動再起動機構が必須です。**
+
+詳細は [SECURITY.md](SECURITY.md) を参照してください。
+
+## 設定オプション
+
+| パラメータ | デフォルト | 説明 |
+|---|---|---|
+| `detectors` | `[XSSDetector(), SQLiDetector()]` | 使用する検知器のリスト |
+| `self_destruct` | `False` | 自壊の有効化 |
+| `forensics_path` | `/var/vcd/forensics.jsonl` | 証拠ファイルのパス |
+| `blocklist_path` | `/var/vcd/blocklist.txt` | ブロックリストのパス |
+| `on_detect` | `None` | 検知時のコールバック関数 |
+
+## カスタム検知器
+
+```python
+from vcd import VCDMiddleware
+from vcd.detector import BaseDetector
+
+class MyDetector(BaseDetector):
+    def detect(self, request):
+        if "malicious" in request.get_data(as_text=True):
+            return True, "custom pattern detected"
+        return False, ""
+
+app.wsgi_app = VCDMiddleware(
+    app.wsgi_app,
+    detectors=[MyDetector()],
+    self_destruct=True,
+)
+```
+
+## VCD の動作フロー
+
+```
+攻撃リクエスト
+  ↓
+検知（並列検査）
+  ↓
+証拠書き出し（forensics.jsonl へ）
+  ↓
+自壊（os._exit(1)）
+  ↓
+supervisord 等による自動再起動
+  ↓
+ブロックリスト読み込み → 同一 IP を 403 で遮断
+```
+
+## ライセンス
+
+MIT License — 詳細は [LICENSE](LICENSE) を参照してください。

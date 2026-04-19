@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vcd-python"
+version = "0.1.0"
+description = "Volatile Cyber Defense: A self-destructing security middleware for Python web applications"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+keywords = ["security", "middleware", "volatile-cyber-defense", "intrusion-detection"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = []
+
+[project.optional-dependencies]
+flask = ["flask>=2.0"]
+dev = ["pytest", "flask"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["vcd"]
+
+[project.urls]
+Homepage = "https://github.com/nanikore7250/vcd-python"
+Paper = "https://zenodo.org/records/19648507"
+"Bug Tracker" = "https://github.com/nanikore7250/vcd-python/issues"
