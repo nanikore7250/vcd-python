@@ -28,18 +28,17 @@ app = Flask(__name__)
 def index():
     return "Hello, World!"
 
-# デフォルト：検知・ログのみ（自壊しない）
+# デフォルト：検知 → 証拠保全のみ（自壊・ブロックなし）
 app.wsgi_app = VCDMiddleware(app.wsgi_app)
 ```
 
-自壊を有効化する場合:
+自壊を有効化する場合（本番推奨）:
 
 ```python
 app.wsgi_app = VCDMiddleware(
     app.wsgi_app,
     self_destruct=True,
     forensics_path="/var/vcd/forensics.jsonl",
-    blocklist_path="/var/vcd/blocklist.txt",
 )
 ```
 
@@ -50,6 +49,42 @@ app.wsgi_app = VCDMiddleware(
 
 詳細は [SECURITY.md](SECURITY.md) を参照してください。
 
+## VCD の動作フロー
+
+このプロダクトのコアは **証拠保全** と **自壊** です。
+
+```
+攻撃リクエスト
+  ↓
+検知（XSS・SQLi 等）
+  ↓
+証拠書き出し（forensics.jsonl へ）  ← コア
+  ↓
+自壊（os._exit(1)）                 ← コア
+  ↓
+supervisord 等による自動再起動
+```
+
+## IP ブロック機能（オプション）
+
+デフォルトでは無効です。`block=True` を指定すると、攻撃元 IP を記録し、再起動後も同一 IP を 403 で遮断します。
+
+```python
+app.wsgi_app = VCDMiddleware(
+    app.wsgi_app,
+    self_destruct=True,
+    forensics_path="/var/vcd/forensics.jsonl",
+    block=True,
+    blocklist_path="/var/vcd/blocklist.txt",
+)
+```
+
+```
+（再起動後）
+  ↓
+ブロックリスト読み込み → 同一 IP を 403 で遮断
+```
+
 ## 設定オプション
 
 | パラメータ | デフォルト | 説明 |
@@ -57,7 +92,8 @@ app.wsgi_app = VCDMiddleware(
 | `detectors` | `[XSSDetector(), SQLiDetector()]` | 使用する検知器のリスト |
 | `self_destruct` | `False` | 自壊の有効化 |
 | `forensics_path` | `/var/vcd/forensics.jsonl` | 証拠ファイルのパス |
-| `blocklist_path` | `/var/vcd/blocklist.txt` | ブロックリストのパス |
+| `block` | `False` | IP ブロック機能の有効化 |
+| `blocklist_path` | `/var/vcd/blocklist.txt` | ブロックリストのパス（`block=True` 時に使用） |
 | `on_detect` | `None` | 検知時のコールバック関数 |
 
 ## カスタム検知器
@@ -77,22 +113,6 @@ app.wsgi_app = VCDMiddleware(
     detectors=[MyDetector()],
     self_destruct=True,
 )
-```
-
-## VCD の動作フロー
-
-```
-攻撃リクエスト
-  ↓
-検知（並列検査）
-  ↓
-証拠書き出し（forensics.jsonl へ）
-  ↓
-自壊（os._exit(1)）
-  ↓
-supervisord 等による自動再起動
-  ↓
-ブロックリスト読み込み → 同一 IP を 403 で遮断
 ```
 
 ## ライセンス
