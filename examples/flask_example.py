@@ -46,7 +46,7 @@ def on_attack_detected(req, reason):
 # ミドルウェアを適用（自壊無効・デフォルト設定）
 app.wsgi_app = VCDMiddleware(
     app.wsgi_app,
-    self_destruct=False,          # 本番で有効化する場合は True に変更
+    self_destruct=True,          # 本番で有効化する場合は True に変更
     forensics_path="/tmp/vcd_forensics.jsonl",
     blocklist_path="/tmp/vcd_blocklist.txt",
     on_detect=on_attack_detected,
