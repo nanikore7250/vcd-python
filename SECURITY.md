@@ -19,4 +19,4 @@
 
 ### 脆弱性の報告
 
-脆弱性を発見した場合は、GitHub Issues ではなく直接 [Issues](https://github.com/nanikore7250/vcd-python/issues) へご報告ください。
+脆弱性を発見した場合は [Issues](https://github.com/nanikore7250/vcd-python/issues) へご報告ください。
