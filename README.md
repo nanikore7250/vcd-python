@@ -1,5 +1,6 @@
 # vcd-python
 [![PyPI](https://img.shields.io/pypi/v/vcd-python)](https://pypi.org/project/vcd-python/)
+
 **Volatile Cyber Defense (VCD)** の Python 実装です。攻撃を検知したらプロセスが即座に証拠を保全して自壊し、クリーンな状態で回復するセキュリティミドルウェアです。
 
 論文: [DOI: 10.5281/zenodo.19648507](https://zenodo.org/records/19648507)
